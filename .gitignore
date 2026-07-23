@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Local render output (people render charts into their own folders)
+/out/
+/output/
+*-demo/
+*.gif.tmp
+
+# assets/fonts and assets/levels_logo_grey.png ARE committed on purpose — they make
+# the skill's core look self-contained (no downloads). Company logos are NOT: they're
+# fetched on demand from logo.dev and cached locally (see references/company-logos.md).
+assets/company_logos/*
+!assets/company_logos/.gitkeep

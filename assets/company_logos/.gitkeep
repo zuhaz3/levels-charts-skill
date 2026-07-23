@@ -1,0 +1,3 @@
+# On-demand cache for company brand logos fetched by company_logo() from logo.dev.
+# Files here are gitignored. Set $LOGO_DEV_TOKEN (free key at https://logo.dev) to
+# populate it — see references/company-logos.md.
