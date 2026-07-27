@@ -63,6 +63,19 @@ python3 -m pip install matplotlib pillow numpy fonttools
   `/plugin marketplace update levelsfyi`.
 - **Manual install:** re-copy `skills/levels-charts` over your `~/.claude/skills/levels-charts`.
 
+## Using with other AI tools (Codex, Cursor, plain Python…)
+The Claude Code **plugin** install (auto-updates) is Claude-Code-specific, but the
+**skill is just portable Python + Markdown** — it works with any tool, or none:
+1. Clone the repo: `git clone https://github.com/zuhaz3/levels-charts-skill.git`
+2. `pip install matplotlib pillow numpy fonttools`
+3. Point your agent at [`skills/levels-charts/SKILL.md`](skills/levels-charts/SKILL.md)
+   (the operating manual) and import the engine from `skills/levels-charts/lib`
+   (see **Using it in code** above).
+
+A root [`AGENTS.md`](AGENTS.md) gives Codex, Cursor, and other AGENTS.md-aware agents
+the gist automatically when they work in a clone. Outside Claude Code you update with
+`git pull` (there's no cross-tool auto-update standard yet).
+
 ## Quick test (no Claude needed)
 From a clone of this repo:
 ```
