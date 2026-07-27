@@ -82,9 +82,14 @@ deleted.)
 | Two-axis relationship | `scatter` | Labeled points; set your own limits/ticks. |
 
 ## Minimal skeleton
+Point Python at this skill's `lib/`. Use **this skill's base directory** — it's shown
+when the skill loads (`Base directory for this skill: …`), so this works whether the
+skill was installed manually or as a plugin. Substitute the real path for `SKILL_DIR`:
 ```python
 import sys, os
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/levels-charts/lib"))
+SKILL_DIR = "…"   # ← this skill's base directory (from the skill-load message);
+                  #    a manual install is ~/.claude/skills/levels-charts
+sys.path.insert(0, os.path.join(SKILL_DIR, "lib"))
 from levels_charts import *           # new_canvas, save, builders, colors, money/pct
 # Square 1080x1080 is the default. For the 4:5 portrait layout: set_format("portrait")
 

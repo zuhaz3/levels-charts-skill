@@ -12,7 +12,9 @@ identical to a still chart — it only adds motion.
 
 ```python
 import sys, os
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/levels-charts/lib"))
+# SKILL_DIR = this skill's base directory (from the skill-load message); a manual
+# install is ~/.claude/skills/levels-charts. Works for manual + plugin installs.
+sys.path.insert(0, os.path.join(SKILL_DIR, "lib"))
 from levels_charts import *                 # colors, money, presets
 from levels_charts_anim import animate_value_line
 

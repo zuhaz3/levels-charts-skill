@@ -1,0 +1,15 @@
+{
+  "name": "levelsfyi",
+  "owner": { "name": "Zuhayeer Musa", "url": "https://github.com/zuhaz3" },
+  "metadata": {
+    "description": "Levels.fyi tools for Claude Code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "levels-charts",
+      "source": { "source": "github", "repo": "zuhaz3/levels-charts-skill" },
+      "description": "Editorial Levels.fyi charts + animated GIFs from any dataset — social-ready PNGs in the clean Ramp-style layout, plus GIF animators (value-line, hold-vs-index gap race, and more)."
+    }
+  ]
+}

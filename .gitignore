@@ -16,8 +16,9 @@ Thumbs.db
 *-demo/
 *.gif.tmp
 
-# assets/fonts and assets/levels_logo_grey.png ARE committed on purpose — they make
-# the skill's core look self-contained (no downloads). Company logos are NOT: they're
-# fetched on demand from logo.dev and cached locally (see references/company-logos.md).
-assets/company_logos/*
-!assets/company_logos/.gitkeep
+# The bundled fonts and Levels logo PNG under skills/levels-charts/assets/ ARE committed
+# on purpose — they make the skill's core look self-contained (no downloads). Company
+# logos are NOT: they're fetched on demand from logo.dev and cached locally
+# (see skills/levels-charts/references/company-logos.md).
+skills/levels-charts/assets/company_logos/*
+!skills/levels-charts/assets/company_logos/.gitkeep
