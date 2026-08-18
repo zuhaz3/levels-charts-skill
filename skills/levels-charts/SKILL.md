@@ -200,8 +200,57 @@ defect). Preview the `.gif` in a **browser** (Finder/Preview may show one frame)
   → lower `seconds` / raise `fps`, raise `hold`
 - "Add the company logo to the top-right of the animation." → `logo=` + `logo_at="header"`
 
+## Measured craft utilities (v1.1)
+
+Promoted from the shipped editorial packs — the machinery every large chart rebuilt by hand.
+All content-agnostic; the classic builders above are unchanged.
+
+- `register_format(name, FW, FH)` — one-line editorial format at any size; the header/footer
+  proportions scale automatically. `"xl"` (3000x3000) and `"xltall"` (3300x4200) ship
+  pre-registered alongside the social formats.
+- `text_w(fig, s, fs, weight=800)` — rendered text width in px. **Measure, never estimate:**
+  Nunito 800 runs ~27px/char at 17.5pt/200dpi, about double a casual guess.
+- `usd(v)` — dollars in, `$9.5K` / `$1.3M` / `$60B` out (`money()` is thousands-based and
+  stops at M; keep it for the builders' `fmt=`).
+- `audit(fig, ax, ..., keepout=[...])` — the measured collision audit: text-vs-text overlap,
+  off-plot spill, and text-vs-art via `keepout` rects in data coords. **Run after every
+  render and treat nonzero as a build failure.** Every labeling bug that ever shipped from
+  these packs lived in the gap this closes.
+- `brand_mark(domain)` / `place_mark(ax, arr, xy, box_px)` — company marks with a REAL alpha
+  channel (plates un-blended, never ramped toward one background) placed by area-equivalent
+  size, returning measured width. Use these instead of raw `company_logo` for marks on canvas.
+- `lib/layout.py` — the mark/label placement engine (`place`, `place_exact`, `label_anchor`):
+  true-position marks, four-sided label scoring, minimal displacement, fixed-furniture
+  avoidance. Import it beside `levels_charts`; no more per-pack copies.
+- `new_canvas(..., logo=False)` — co-brand-free exports. `save(..., close=False)` — keep the
+  figure alive for animation frames and variants.
+
+## Craft rules (hard-won, keep them)
+
+- **Audit against the ART, not just other text.** Label-vs-label checks pass while a label
+  sits on a bar. Pass the marks/bands as `keepout`.
+- **Contour/ray labels place LAST**, sliding along their own line around everything already
+  placed — they are the most flexible text on the page and they claim escape zones if drawn
+  first.
+- **Leaders draw ABOVE label halos** (zorder over the withStroke outlines) and never into a
+  mark's own plate, or they vanish. If everything fits at true positions, prefer zero leaders.
+- **A novel encoding needs a how-to-read key on the chart** (a mini example with named
+  edges), docked with the legend at the frame's edge — floated near the field it reads as
+  data. If the key has to work hard, consider a simpler form.
+- Legend swatches must **depict their mark** (hatched chip for a hatch, dot for a dot);
+  a wrong swatch is an encoding lie.
+- **Range boxes: corners overstate the spread** when the two ranges are correlated. Say so
+  in the source line, and never caption the extremes as outcomes.
+- **Screen-space glows on log axes must be scatter-based** (patches/images live in data
+  space and warp across decades), and need 12+ stacked washes or the gradient bands.
+- **Subtitle discipline:** the graphic keeps only what must survive a bare screenshot — the
+  claim, the encoding in one line, the integrity caveats. Narrative belongs in the post.
+- **The 400px test:** downscale to ~400px wide before shipping social work. Anything
+  unreadable there gets enlarged, simplified, or removed.
+
 ## Files in this skill
-- `lib/levels_charts.py` — the engine: `new_canvas`, `clean`, `legmark`,
+- `lib/layout.py` — the mark/label placement engine (see Measured craft utilities above).
+- `lib/levels_charts.py` — the engine: `new_canvas`, `clean`, `legmark`, Plus the v1.1 craft utilities: register_format, text_w, usd, audit, brand_mark, place_mark.
   `legend_row`, `save`, `money`, `pct`, `company_logo` (fetch+cache a brand logo by
   domain via logo.dev), `rgb_str` (Levels `company.color` "r,g,b" → hex), and builders
   `line / vbar / grouped_vbar / hbar / dumbbell / stacked100 / scatter / company_strip / grant_growth / bars_line`.

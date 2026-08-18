@@ -248,7 +248,8 @@ def _fit_to_width(fig, txt, right=0.955):
 
 # ---------------------------------------------------------------- frame
 def new_canvas(title, subtitle, source, *, left=None, width=None,
-               bottom=None, top_pad=None, src_wrap=78, sub_wrap=76, add_axes=True, src_y=None):
+               bottom=None, top_pad=None, src_wrap=78, sub_wrap=76, add_axes=True, src_y=None,
+               logo=True):
     """Draw the editorial frame and return (fig, ax) for the plot area.
 
     The plot TOP is derived from the header height (title + subtitle line counts),
@@ -277,8 +278,9 @@ def new_canvas(title, subtitle, source, *, left=None, width=None,
     # footer: source bottom-left (wrapped so it never reaches the logo); logo bottom-right
     fig.text(LEFT, SRC_Y if src_y is None else src_y, _wrap(source, src_wrap), fontsize=11.5,
              fontweight=600, color=MUTE, va="bottom", ha="left", linespacing=1.34)
-    fig.figimage(LOGO_ARR, xo=int(FW*DPI-LOGO_ARR.shape[1]-_LOGO_PADR),
-                 yo=_LOGO_YO, zorder=30, alpha=0.95)
+    if logo:
+        fig.figimage(LOGO_ARR, xo=int(FW*DPI-LOGO_ARR.shape[1]-_LOGO_PADR),
+                     yo=_LOGO_YO, zorder=30, alpha=0.95)
     sub_bot = sub_y - (subtitle.count("\n")+1)*SUB_LH
     top = sub_bot - top_pad
     if not add_axes:
@@ -325,12 +327,171 @@ def legend_row(ax, items, y=0.95, x0=0.0, dx=0.30):
         legmark(ax, x, y, color, label, outline=outline)
         x += dx
 
-def save(fig, path):
-    """Save PNG at full res to `path` (absolute or relative). Creates parent dirs."""
+def save(fig, path, close=True):
+    """Save PNG at full res to `path` (absolute or relative). Creates parent dirs.
+    Pass close=False when re-saving the same figure (animation frames, variants)."""
     path = os.fspath(path)
     d = os.path.dirname(path)
     if d: os.makedirs(d, exist_ok=True)
-    fig.savefig(path, dpi=DPI, facecolor=CREAM); plt.close(fig); print("wrote", path)
+    fig.savefig(path, dpi=DPI, facecolor=CREAM)
+    if close: plt.close(fig)
+    print("wrote", path)
+
+
+# ==================================================== measured craft utilities (v1.1)
+# Promoted from the editorial packs (ai-labs, cursor-exit-map, yoe-pyramid and friends):
+# the pieces every large chart rebuilt by hand. All content-agnostic.
+
+# The editorial page rhythm, tuned across the shipped XL packs at 15 inches of height.
+# A third tuning alongside the social ones hand-written in _FORMATS above (whose a4/tall
+# comments do this same base-scaling by hand from "portrait"); named here so the numbers
+# live in exactly one place.
+EDITORIAL_PROPS = dict(TITLE_Y=0.052, TITLE_LH=0.045, SUB_GAP=0.013, SUB_LH=0.0265,
+                       PLOT_GAP=0.044, FOOTER_TOP=0.108, SRC_Y=0.048)
+
+
+def register_format(name, FW, FH, *, title_fs=48, sub_fs=24, base=15.0, props=None):
+    """Register an editorial format sized FW x FH inches (x DPI px) and return its dict.
+
+    The proportions (`props`, default EDITORIAL_PROPS) are tuned at `base` inches of
+    height and scale with base/FH, so titles and footers keep the same physical size as
+    the page grows."""
+    p = EDITORIAL_PROPS if props is None else props
+    s = base / FH
+    _FORMATS[name] = dict(FW=FW, FH=FH, TITLE_Y=1 - p["TITLE_Y"]*s, TITLE_LH=p["TITLE_LH"]*s,
+                          SUB_GAP=p["SUB_GAP"]*s, SUB_LH=p["SUB_LH"]*s,
+                          PLOT_GAP=p["PLOT_GAP"]*s, FOOTER_TOP=p["FOOTER_TOP"]*s,
+                          SRC_Y=p["SRC_Y"]*s, TITLE_FS=title_fs, SUB_FS=sub_fs)
+    return _FORMATS[name]
+
+
+def text_w(fig, s, fs, weight=800):
+    """Rendered width of `s` in device px. Measure, never estimate: Nunito 800 runs about
+    27 px per character at 17.5pt/200dpi, roughly double a casual guess."""
+    o = fig.text(0, -1, s, fontsize=fs, fontweight=weight)
+    w = o.get_window_extent(fig.canvas.get_renderer()).width
+    o.remove()
+    return w
+
+
+def usd(v):
+    """Dollars -> compact label: usd(9500)='$9.5K', usd(60e9)='$60B'. Unlike money(),
+    input is DOLLARS, and billions are supported."""
+    sign, a = ("-", -v) if v < 0 else ("", v)
+    for cut, suf in ((1e9, "B"), (1e6, "M"), (1e3, "K")):
+        if a >= cut:
+            s = f"{a/cut:.1f}".rstrip("0").rstrip(".")
+            return f"{sign}${s}{suf}"
+    return f"{sign}${a:.0f}"
+
+
+def _sep(a, b):
+    """True when axis-aligned rects (x0, y0, x1, y1) do not intersect."""
+    return a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1]
+
+
+def audit(fig, *axes, keepout=(), verbose=True):
+    """Measured collision audit. Returns the number of problems found (0 = clean).
+
+    Checks every ax.text on the given axes for pairwise overlap, for spilling outside its
+    own axes box, and for intersecting any `keepout` rect — pass the chart's bars/marks/
+    bands so labels are audited against the ART, not just against other labels. A keepout
+    entry is (x0, y0, x1, y1) in data coords of the FIRST axes, or (ax, (x0, y0, x1, y1))
+    to name another axes' frame. Run it after every render; the shipped bugs this would
+    have caught were all in the gap between "labels don't overlap" and "labels don't sit
+    on the chart".
+
+    Scope: audits `ax.texts` only (frame text from new_canvas and tick labels are excluded),
+    and the off-plot check assumes labels belong inside their axes — a deliberate
+    outside-axes device (an under-axis slot, a gutter label) will flag, so read findings,
+    don't just gate on zero."""
+    rend = fig.canvas.get_renderer()
+    items = []
+    for ax in axes:
+        bb = ax.get_window_extent(rend)
+        for t in ax.texts:
+            # the unbound base-class call is deliberate: Annotation.get_window_extent
+            # unions in the arrow patch, so leader lines would false-positive as text
+            e = matplotlib.text.Text.get_window_extent(t, renderer=rend)
+            items.append(((e.x0, e.y0, e.x1, e.y1), (bb.x0, bb.y0, bb.x1, bb.y1),
+                          t.get_text()))
+    bad = 0
+    for i in range(len(items)):
+        ri, _, si = items[i]
+        for j in range(i + 1, len(items)):
+            rj, _, sj = items[j]
+            if not _sep(ri, rj):
+                if verbose: print(f"  OVERLAP: '{si[:34]}' x '{sj[:34]}'")
+                bad += 1
+    for r, bb, s in items:
+        if r[0] < bb[0] - 2 or r[2] > bb[2] + 2 or r[1] < bb[1] - 2 or r[3] > bb[3] + 2:
+            if verbose: print(f"  OFF-PLOT: '{s[:40]}'")
+            bad += 1
+    for ko in keepout:
+        ko_ax, rect = ko if isinstance(ko[0], matplotlib.axes.Axes) else (axes[0], ko)
+        (px0, py0), (px1, py1) = ko_ax.transData.transform([rect[:2], rect[2:]])
+        for r, _, s in items:
+            if not _sep(r, (px0, py0, px1, py1)):
+                if verbose: print(f"  ON-ART: '{s[:40]}'")
+                bad += 1
+    if verbose:
+        print(f"  audit: {bad} problems" if bad else "  audit: clean")
+    return bad
+
+
+def brand_mark(domain, size=256, trim=True, min_coverage=0.12):
+    """company_logo() with a REAL alpha channel, whatever plate logo.dev served.
+
+    logo.dev returns transparent glyphs, near-white plates, and pure-black plates. Ramping
+    the plate toward one background bakes that background in and fringes dark plates. So
+    un-blend instead: every plate pixel is P = G*a + plate*(1-a); recover a from distance
+    to the plate colour and divide back out to get the glyph colour. Antialiasing survives
+    and the mark composites onto anything. Returns an RGBA array, or None without a logo.
+    Coverage below `min_coverage` is treated as pure plate; it also floors the divisor so a
+    2% glyph pixel is not amplified 50x into a colour that was never in the artwork."""
+    raw = company_logo(domain, size=size)
+    if raw is None:
+        return None
+    a = raw.astype(float)
+    if a[..., 3].min() <= 250:
+        art = a                                   # already transparent
+    else:
+        border = np.concatenate([a[0, :, :3], a[-1, :, :3], a[:, 0, :3], a[:, -1, :3]])
+        plate = np.median(border, axis=0)
+        delta = a[..., :3] - plate
+        dist = np.linalg.norm(delta, axis=2, keepdims=True)
+        full = np.percentile(dist, 99.5)          # not max: one hot pixel must not set scale
+        cov = np.clip(dist / max(full, 1.0), 0.0, 1.0)
+        art = np.empty_like(a)
+        art[..., :3] = np.clip(plate + delta / np.maximum(cov, min_coverage), 0, 255)
+        art[..., 3] = cov[..., 0] * 255.0
+    art = art.astype(np.uint8)
+    if trim:
+        ys, xs = np.where(art[..., 3] > 20)
+        if len(ys):
+            art = art[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    return art
+
+
+def place_mark(ax, arr, xy, box_px, *, coords="axes fraction", align=(0.5, 0.5), z=14,
+               max_aspect=2.2):
+    """Place a brand_mark() sized so box_px is its AREA-equivalent side; returns drawn width
+    in px so neighbouring text can offset by a measured amount. Area sizing keeps a wide
+    wordmark and a square roundel at equal visual weight."""
+    h, w = arr.shape[0], arr.shape[1]
+    px_per_pt = DPI / 72.0
+    zoom = min(box_px / (np.sqrt(h * w) * px_per_pt),
+               box_px * max_aspect / (w * px_per_pt))
+    ax.add_artist(AnnotationBbox(OffsetImage(arr, zoom=zoom), xy, xycoords=coords,
+                                 frameon=False, box_alignment=align,
+                                 annotation_clip=False, zorder=z))
+    return w * zoom * px_per_pt
+
+
+# editorial sizes proven across the shipped packs (the social sizes above stay the default)
+register_format("xl", 15.0, 15.0)          # 3000x3000 editorial square
+register_format("xltall", 16.5, 21.0)      # 3300x4200 editorial page
+
 
 # ================================================================ builders
 def vbar(ax, cats, values, colors=BLUE, *, fmt=money, ymax=None, ymin=None,

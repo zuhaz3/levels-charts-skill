@@ -1,6 +1,6 @@
 {
   "name": "levels-charts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Levels.fyi-branded editorial data visualizations — social-ready PNG charts and animated GIFs in the clean Ramp-style layout (bold title, gray subtitle, direct-labeled chart, source line, logo watermark on cream), with a built-in visual QA pass.",
   "author": { "name": "Zuhayeer Musa", "url": "https://github.com/zuhaz3" },
   "homepage": "https://github.com/zuhaz3/levels-charts-skill",

@@ -16,6 +16,31 @@ tracks this repo's marketplace). The marketplace entry has no pinned version, so
 
 ---
 
+## 1.1.0 — Measured craft utilities
+Promoted from the shipped editorial packs (ai-labs, cursor-exit-map, yoe-pyramid): the
+content-agnostic machinery every large chart was rebuilding by hand. Classic builders and
+social formats are untouched; everything here is additive.
+
+- `audit(fig, ax, ..., keepout=[...])` — measured collision audit: text-vs-text, off-plot,
+  and text-vs-art via keepout rects (data coords; `(ax, rect)` entries for multi-panel).
+  Treat nonzero as a build failure.
+- `lib/layout.py` — the mark/label placement engine (`place`, `place_exact`, `label_anchor`)
+  that shipped verbatim in four packs; now one canonical copy.
+- `brand_mark(domain)` / `place_mark(...)` — marks with a REAL alpha channel (plates
+  un-blended, never ramped) placed by area-equivalent size, returning measured width.
+- `register_format(name, FW, FH)` + pre-registered `"xl"` (3000x3000) and `"xltall"`
+  (3300x4200); the editorial page rhythm is a named tuning (`EDITORIAL_PROPS`).
+- `text_w(fig, s, fs)` measured text width; `usd(v)` dollar formatter with a B tier.
+- `new_canvas(..., logo=False)` for co-brand-free exports; `save(..., close=False)` for
+  animation frames and variants.
+- SKILL.md: new "Measured craft utilities" and "Craft rules (hard-won)" sections.
+
+Recorded direction (deliberately not in this release): re-expressing the social formats
+through `register_format`; making un-blend the default inside `company_logo` and migrating
+`company_strip`; a shared compaction core under `money()`/`usd()`; deduplicating
+`layout.py`'s two side-scoring passes.
+
+
 ## 1.0.0 — Initial release
 - Levels.fyi editorial chart engine (`lib/levels_charts.py`): `new_canvas` + builders
   `line / vbar / grouped_vbar / hbar / dumbbell / stacked100 / scatter / company_strip /
